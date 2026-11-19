@@ -239,7 +239,7 @@ CATALOG = Catalog(
 )
 
 
-def _redact_team_names(method: str, template: str, data: Any) -> Any:
+def _redact_team_names(app: Any, method: str, template: str, data: Any) -> Any:
     """The example's redaction hook: a team called "secret" is not shown."""
     if template == "/api/teams":
         return [t if t["name"] != "secret" else {**t, "name": "<redacted>"} for t in data]

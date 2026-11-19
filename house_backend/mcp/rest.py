@@ -27,9 +27,10 @@ from starlette.types import ASGIApp
 from house_backend.auth import HouseAuth
 from house_backend.mcp.catalog import Catalog
 
-# ``redact(method, template, data) -> data``: ``data`` is the parsed JSON, or
-# the text when the call was ``raw``.
-RedactHook = Callable[[str, str, Any], Any]
+# ``redact(app, method, template, data) -> data``: ``data`` is the parsed
+# JSON, or the text when the call was ``raw``; ``app`` is the app called, for a
+# redactor that reads its OpenAPI document (NestEgg's withholds by schema).
+RedactHook = Callable[[ASGIApp, str, str, Any], Any]
 
 
 def error_detail(response: httpx.Response) -> str:
@@ -91,4 +92,4 @@ class RestCaller:
             return None
         else:
             data = response.json()
-        return self.redact(method, template, data) if self.redact else data
+        return self.redact(app, method, template, data) if self.redact else data

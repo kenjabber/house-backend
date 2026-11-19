@@ -68,11 +68,13 @@ live in the usual files:
 ```python
 from house_backend.settings import HouseSettings
 
+
 class Settings(HouseSettings):
     SITE_NAME: str = "Example"
     WEBAUTHN_RP_NAME: str = "Example"
     WEBAUTHN_ORIGIN: str = "http://localhost:5173"
     SQLITE_PATH: str = str(Path.home() / ".local" / "share" / "example" / "example.db")
+
 
 settings = Settings()
 ```
@@ -81,18 +83,37 @@ settings = Settings()
 
 ```python
 from house_backend.auth import (
-    BOOTSTRAP_USER_ID, ApiTokenMixin, UserMixin, UserSessionMixin,
-    WebAuthnChallengeMixin, WebAuthnCredentialMixin,
+    BOOTSTRAP_USER_ID,
+    ApiTokenMixin,
+    UserMixin,
+    UserSessionMixin,
+    WebAuthnChallengeMixin,
+    WebAuthnCredentialMixin,
 )
+
 
 class Base(DeclarativeBase):
     pass
 
-class User(UserMixin, Base): pass
-class WebAuthnCredential(WebAuthnCredentialMixin, Base): pass
-class UserSession(UserSessionMixin, Base): pass
-class WebAuthnChallenge(WebAuthnChallengeMixin, Base): pass
-class ApiToken(ApiTokenMixin, Base): pass
+
+class User(UserMixin, Base):
+    pass
+
+
+class WebAuthnCredential(WebAuthnCredentialMixin, Base):
+    pass
+
+
+class UserSession(UserSessionMixin, Base):
+    pass
+
+
+class WebAuthnChallenge(WebAuthnChallengeMixin, Base):
+    pass
+
+
+class ApiToken(ApiTokenMixin, Base):
+    pass
 ```
 
 `api/dependencies/auth.py`
@@ -122,12 +143,14 @@ from house_backend.mcp.endpoint import mcp_lifespan
 
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     auth.warn_if_auth_disabled(logger)
     prepare_database(app, settings.SQLITE_PATH, Base, migrate=run_sqlite_migrations)
     async with mcp_lifespan(app, build_server, settings):
         yield
+
 
 app = FastAPI(title="example", lifespan=lifespan)
 add_cors(app, settings)
@@ -141,13 +164,16 @@ mount_mcp(app, auth, "MCP requires an API token (Settings → API tokens)")
 ```python
 pytest_plugins = ["house_backend.testing"]
 
+
 @pytest.fixture
 def house_app():
     return main.app
 
+
 @pytest.fixture
 def house_auth():
     return dependencies.auth
+
 
 @pytest.fixture
 def house_base():
@@ -184,10 +210,10 @@ Properties: `webauthn_allowed_origins` and `mcp_extra_hosts` (the two lists).
 ```python
 from house_backend.db import create_sqlite_engine, snapshot, backup_bytes, restore_bytes, RestoreError
 
-engine = create_sqlite_engine(settings.SQLITE_PATH)    # NullPool, WAL, foreign keys, busy timeout
-snapshot(settings.SQLITE_PATH, backups / "app-2026-01-01.db")   # a consistent copy, mode 600
-data = backup_bytes(settings.SQLITE_PATH)              # the same, as bytes (a download)
-restore_bytes(settings.SQLITE_PATH, upload, required_tables={"user", "things"})   # RestoreError if not valid
+engine = create_sqlite_engine(settings.SQLITE_PATH)  # NullPool, WAL, foreign keys, busy timeout
+snapshot(settings.SQLITE_PATH, backups / "app-2026-01-01.db")  # a consistent copy, mode 600
+data = backup_bytes(settings.SQLITE_PATH)  # the same, as bytes (a download)
+restore_bytes(settings.SQLITE_PATH, upload, required_tables={"user", "things"})  # RestoreError if not valid
 ```
 
 Never copy a WAL database's file: the copy can miss what is still in the
@@ -205,16 +231,20 @@ Migration helpers for the app's own migrations, on a SQLAlchemy connection:
 ```python
 from house_backend.fields import PLAIN, Plain, UTCDateTime
 
+
 class ThingResponse(BaseModel):
-    name: Plain[str]                      # x-house: plain in the JSON schema
+    name: Plain[str]  # x-house: plain in the JSON schema
     note: Annotated[str | None, PLAIN]
-    created: UTCDateTime                  # naive UTC from SQLite leaves as "…Z"
+    created: UTCDateTime  # naive UTC from SQLite leaves as "…Z"
 ```
 
 `UTCDateTime` gives a naive value the UTC zone and converts an aware one
 (PLAN D-15). `Plain[T]` marks a field `x-house: plain`: it holds nothing an
-app withholds from an agent (D-16). Every field of the shared auth responses
-carries the marker; `house_marker(property_schema)` reads it.
+app withholds from an agent (D-16). Every scalar field of the shared auth
+responses carries the marker; a field holding a model does not (its own
+fields are classified, the app's extension fields with their own markers).
+`house_marker(property_schema)` reads it. A redactor that trusts the marker
+reads it on scalar fields only.
 
 ### `house_backend.auth`
 
@@ -279,20 +309,21 @@ passkeys, are human-only.
 class UserTeam(BaseModel):
     team_id: int
 
-class Teams(UserExtension):
-    user_fields = UserTeam          # on every user response (me, status, register, login, users)
-    detail_fields = UserTokens      # on the admin's user detail only
-    create_fields = UserTeam        # accepted by POST /auth/users
-    patch_fields = UserTeamChange   # accepted by PATCH /auth/users/{id}
 
-    def detail_values(self, session, user):          # computed values (default: user attributes)
+class Teams(UserExtension):
+    user_fields = UserTeam  # on every user response (me, status, register, login, users)
+    detail_fields = UserTokens  # on the admin's user detail only
+    create_fields = UserTeam  # accepted by POST /auth/users
+    patch_fields = UserTeamChange  # accepted by PATCH /auth/users/{id}
+
+    def detail_values(self, session, user):  # computed values (default: user attributes)
         return {"token_count": count_tokens(session, user.id)}
 
-    def new_user_values(self, session, values):       # check, raise HTTPException(422), return columns
+    def new_user_values(self, session, values):  # check, raise HTTPException(422), return columns
         ...
-    def update_user(self, session, user, values):     # only the patch fields the request set
+    def update_user(self, session, user, values):  # only the patch fields the request set
         ...
-    def bootstrap_values(self, session):              # columns for rows the library creates
+    def bootstrap_values(self, session):  # columns for rows the library creates
         return {"team_id": first_team(session).id}
 ```
 
@@ -308,11 +339,12 @@ from house_backend.mcp.endpoint import mcp_lifespan
 from house_backend.mcp.redact import Redactor
 from house_backend.mcp.rest import RestCaller
 
-CATALOG = Catalog(TOOL_OPERATIONS, EQUIVALENT, HUMAN_ONLY)   # the app's data, in its catalog.py
+CATALOG = Catalog(TOOL_OPERATIONS, EQUIVALENT, HUMAN_ONLY)  # the app's data, in its catalog.py
 redactor = Redactor(SECRET_FIELDS, SECRET_PATTERN, placeholder_prefixes=("key-ref-",))
-rest = RestCaller(auth, CATALOG, redact=lambda method, template, data: redactor.redact(data))
+rest = RestCaller(auth, CATALOG, redact=lambda app, method, template, data: redactor.redact(data))
 
-async def _api(ctx, method, template, **kwargs):       # in the app's tools.py
+
+async def _api(ctx, method, template, **kwargs):  # in the app's tools.py
     request = ctx.request_context.request
     return await rest.call(request.app, request.headers.get("authorization"), method, template, **kwargs)
 ```
@@ -327,7 +359,8 @@ async def _api(ctx, method, template, **kwargs):       # in the app's tools.py
   operation the catalog does not expose, marks the request with the via
   header, turns a 4xx/5xx into a `ToolError` with the API's `detail`, and
   passes the result (the text, when `raw`) through the redaction hook
-  `(method, template, data) -> data`.
+  `(app, method, template, data) -> data` (the app, for a redactor built from
+  its OpenAPI document).
 - **catalog**: `Catalog(tool_operations, equivalent, human_only,
   human_only_enforced=None)` with `exposed_operations()` and `tool_names()`.
   `human_only_enforced` defaults to every human-only operation outside
@@ -380,18 +413,21 @@ fixtures (see [A new app](#a-new-app)). Optional overrides: `house_db_setting`
 keeps its own helpers' signatures and its tests' calls unchanged:
 
 ```python
-pytest.register_assert_rewrite("house_backend.testing")   # before importing it
+pytest.register_assert_rewrite("house_backend.testing")  # before importing it
 
 from house_backend import testing  # noqa: E402
+
 
 def seed_user(session, user_id="test-admin", username="ken", is_admin=True):
     return testing.seed_user(auth, session, user_id, username, is_admin)
 
+
 def login_as(client, session, user):
     return testing.login_as(auth, client, session, user)
 
+
 @pytest.fixture
-def admin(session):          # overrides the shared one ("alex")
+def admin(session):  # overrides the shared one ("alex")
     return seed_user(session)
 ```
 
@@ -407,8 +443,10 @@ The MCP parity checks, for the app's `tests/test_mcp_parity.py`:
 def test_every_rest_operation_is_classified():
     check_operations_partition(main.app, catalog.CATALOG)
 
+
 def test_registered_tools_match_the_catalog(mcp):
     check_tools_match_catalog(mcp, catalog.CATALOG)
+
 
 def test_human_only_operations_refuse_an_api_token(client, api_token):
     check_human_only_refuses_tokens(client, api_token, catalog.CATALOG)

@@ -185,3 +185,31 @@ def test_dev_bypass_signs_in_as_bootstrap_admin_with_extension_values(client, mo
     status = client.get("/api/auth/status").json()
     assert status["authenticated"] and status["user"]["is_admin"] and status["user"]["team_id"] == 1
     assert client.get("/api/teams").status_code == 200
+
+
+def test_every_shared_scalar_field_is_plain_and_no_model_field_is():
+    """D-16: a scalar field of a shared response is marked x-house: plain; a
+    field holding a model is not, so the model's own fields (an app's
+    extension fields among them) are classified one by one."""
+    from tests.apps import multi
+
+    schemas = multi.app.openapi()["components"]["schemas"]
+    shared = [
+        "UserResponse",
+        "UserDetail",
+        "AuthStatusResponse",
+        "CredentialResponse",
+        "SessionResponse",
+        "ApiTokenResponse",
+        "ApiTokenCreated",
+    ]
+    extension = {"team_id", "token_count"}
+    for name in shared:
+        for field, prop in schemas[name]["properties"].items():
+            holds_model = "$ref" in str(prop)
+            if field in extension:
+                assert "x-house" not in prop, f"{name}.{field}"
+            elif holds_model:
+                assert "x-house" not in prop, f"{name}.{field} holds a model"
+            else:
+                assert prop.get("x-house") == "plain", f"{name}.{field}"

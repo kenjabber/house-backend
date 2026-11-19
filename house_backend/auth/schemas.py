@@ -2,9 +2,10 @@
 
 The fixed ones are plain classes. The user models (and the status model that
 holds a user) are built per :class:`HouseAuth`, because an app's
-:class:`UserExtension` adds fields to them. Every shared response field is
-marked ``x-house: plain`` (D-16) and every timestamp leaves in UTC with its
-zone (D-15).
+:class:`UserExtension` adds fields to them. Every shared scalar response
+field is marked ``x-house: plain`` (D-16); a field holding a model is not, so
+the model's own fields are classified one by one. Every timestamp leaves in
+UTC with its zone (D-15).
 """
 
 from __future__ import annotations
@@ -146,7 +147,9 @@ def build_schemas(auth: HouseAuth) -> AuthSchemas:
     }
     if auth.multi_user:
         status_fields["site_name"] = (Plain[str], ...)
-    status_fields["user"] = (Plain[user_response | None], None)
+    # Not marked: a field holding a model is classified by the model's own
+    # fields (an app's extension fields among them), never as a whole.
+    status_fields["user"] = (user_response | None, None)
     status = create_model("AuthStatusResponse", **status_fields)
     create_request = create_model("UserCreateRequest", __base__=UserCreateBase, **_fields_of(ext.create_fields))
     patch_request = create_model("UserPatchRequest", __base__=UserPatchBase, **_fields_of(ext.patch_fields))

@@ -101,13 +101,13 @@ Implementation starts at the build order (§8).
 
   ```python
   auth = HouseAuth(
-      app_name="nestegg",        # cookie "nestegg_session", header "x-nestegg-via", realm
-      settings=settings,          # a HouseSettings (D-13)
+      app_name="nestegg",  # cookie "nestegg_session", header "x-nestegg-via", realm
+      settings=settings,  # a HouseSettings (D-13)
       models=AuthModels(User, WebAuthnCredential, UserSession, WebAuthnChallenge, ApiToken),
-      multi_user=True,            # D-12
-      api_tokens=True,            # D-12
+      multi_user=True,  # D-12
+      api_tokens=True,  # D-12
   )
-  require_user = auth.require_user        # re-exported, so routers' imports do not change
+  require_user = auth.require_user  # re-exported, so routers' imports do not change
   ```
 
   The names above are a sketch; the requirement is one configured object, no
@@ -156,11 +156,13 @@ Implementation starts at the build order (§8).
 - **D-15** **Every datetime leaving the shared routes is UTC with its zone.**
   SQLite keeps naive UTC; the response models add the zone (AppConfig's
   `UTCDateTime`), so a client never guesses.
-- **D-16** **Every field of the shared response models is marked
+- **D-16** **Every scalar field of the shared response models is marked
   `x-house: plain`** in its JSON schema. NestEgg withholds any response field
   it cannot classify (its D-21); the shared auth responses hold no figure, and
   the marker lets NestEgg's redactor and parity test accept them by rule
-  instead of by a list of names.
+  instead of by a list of names. A field holding a model (the `user` of
+  `/auth/status`) is not marked: the model's own fields are classified one by
+  one, so an app's extension fields keep their own classification.
 
 - **D-27** **NestEgg follows the shared patterns** (Ken, 2026-11-19: it is
   new and unused). Where NestEgg alone differs from the other apps, NestEgg

@@ -10,7 +10,6 @@ not committed (PLAN D-3).
 | 9 | [Fold the vault client into house-backend](#9-fold-the-vault-client-into-house-backend) | optional |
 | 10 | [The MCP record-tool layer](#10-the-mcp-record-tool-layer) | idea |
 | 11 | [A check that an app holds no copies](#11-a-check-that-an-app-holds-no-copies) | idea |
-| 12 | [The rule in Ken's user-level CLAUDE.md](#12-the-rule-in-kens-user-level-claudemd) | ready to start |
 
 Next number: **13**.
 
@@ -74,12 +73,3 @@ a file with `# SOURCE:` naming one of the replaced modules, or
 adopted and the list of things to look for is known from experience.
 
 **Done when:** decided with Ken; if yes, each adopted app's test run includes it.
-
-## 12. The rule in Ken's user-level CLAUDE.md
-
-PLAN D-23. `~/.claude/CLAUDE.md` should say, next to its house-ui line, that
-a new web app's backend starts on house-backend (the text of D-22, in
-short). That file is outside this repo: propose the two or three lines to
-Ken, or edit it in a session that can reach it.
-
-**Done when:** the rule is in `~/.claude/CLAUDE.md`.

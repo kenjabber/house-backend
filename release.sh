@@ -43,22 +43,23 @@ echo "== checks"
 "$python" -m pytest -q
 
 echo "== build $tag"
+# Until the release commit, a failure puts the version back.
+trap 'git checkout -- "$version_file"; rm -rf dist' EXIT
 sed -i.bak -E "s/^__version__ = \".*\"$/__version__ = \"$version\"/" "$version_file" && rm -f "$version_file.bak"
 grep -q "^__version__ = \"$version\"$" "$version_file" || fail "could not set the version in $version_file"
 rm -rf dist
 "$python" -m build --wheel --outdir dist >/dev/null
 [[ -f "dist/$whl" ]] || fail "the build did not write dist/$whl"
-"$python" -m zipfile -l "dist/$whl" | grep -q 'house_backend/auth/' || fail "dist/$whl has no house_backend/auth/"
+"$python" -m zipfile -l "dist/$whl" | grep -q 'house_backend/py.typed' || fail "dist/$whl has no house_backend/py.typed"
 echo "built $whl ($(du -h "dist/$whl" | cut -f1 | tr -d ' '))"
 
 if (( dry )); then
-  git checkout -- "$version_file"
-  rm -rf dist
   echo "dry run: stopped before commit, tag, push and upload"
   exit 0
 fi
 
 echo "== publish $tag"
+trap - EXIT
 git commit --quiet -am "Release $tag"
 git tag -a "$tag" -m "house-backend $tag"
 git push --atomic origin main "refs/tags/$tag"

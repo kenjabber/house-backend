@@ -5,7 +5,8 @@ tokens, the SQLite engine and the MCP plumbing, released as a Python wheel
 that each app pins. The backend counterpart of
 [house-ui](https://github.com/kenjabber/house-ui).
 
-**Status (2026-11-19): planned, not yet built.**
-
-- **[PLAN.md](PLAN.md)**: the decisions (D-1 …) and the build order.
-- **[TODO.md](TODO.md)**: open work, in order.
+- **[USAGE.md](USAGE.md)**: how an app installs, pins and uses it; each
+  module; the security behaviour; releasing.
+- **[PLAN.md](PLAN.md)**: the decisions (D-1 …).
+- **[TODO.md](TODO.md)**: open work.
+- **[tests/apps/](tests/apps)**: two small example apps built on it.

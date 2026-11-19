@@ -7,8 +7,7 @@ not committed (PLAN D-3).
 
 | # | Item | Status |
 |---|------|--------|
-| 5 | [The mcp module](#5-the-mcp-module) | ready to start |
-| 6 | [The testing and app modules](#6-the-testing-and-app-modules) | after 5 |
+| 6 | [The testing and app modules](#6-the-testing-and-app-modules) | ready to start |
 | 7 | [USAGE.md and release v1.0.0](#7-usagemd-and-release-v100) | after 6 |
 | 8 | [Write the adoption item into each app's backlog](#8-write-the-adoption-item-into-each-apps-backlog) | after 7 |
 | 9 | [Fold the vault client into house-backend](#9-fold-the-vault-client-into-house-backend) | optional |
@@ -21,32 +20,6 @@ Next number: **13**.
 **Status key:** the shared one (`~/develop/backlog/TODO-FORMAT.md`).
 
 ---
-
-## 5. The mcp module
-
-PLAN build order 4 (D-17), behind the `mcp` extra. Survey rows:
-`mcp_server/endpoint.py`, `rest.py`, `catalog.py`, `redact.py`,
-`tests/test_mcp_parity.py`.
-
-- `endpoint`: `McpEndpoint`, `mcp_lifespan(app, build_server)` and the
-  transport-security allow-list, taking the `HouseAuth` and the 401 text
-  (the apps name different Settings pages).
-- `rest`: `call(app, authorization, method, template, path=, query=, body=,
-  raw=)`, refusing an operation the catalog does not expose, marking the
-  request with the via header, and passing the result through an optional
-  redaction hook `(method, template, data) -> data`.
-- `catalog`: a small class or functions over the app's `TOOL_OPERATIONS`,
-  `EQUIVALENT`, `HUMAN_ONLY` and `HUMAN_ONLY_ENFORCED` giving
-  `exposed_operations()` and `tool_names()`.
-- `redact`: NetConfig's engine with the secret field names, the pattern and
-  the placeholder prefixes supplied by the app; `contains_redaction_marker`.
-- The multi-user example app gains one MCP tool so the endpoint is tested
-  end to end.
-
-**Done when:** the example app's `/mcp` answers a tool call with a token,
-refuses a cookie, a wrong token, a GET and an unknown Host; `rest.call`
-refuses an unexposed operation; the redactor passes NetConfig's
-`tests/test_mcp.py` redaction cases when given NetConfig's names and pattern.
 
 ## 6. The testing and app modules
 

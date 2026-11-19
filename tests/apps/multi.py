@@ -14,9 +14,12 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException
+from mcp.server.mcpserver import Context, MCPServer
+from mcp_types import ToolAnnotations
 from pydantic import BaseModel
 from sqlalchemy import ForeignKey, Integer, String, func, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
+from starlette.routing import Route
 
 from house_backend.auth import (
     ApiTokenMixin,
@@ -29,6 +32,9 @@ from house_backend.auth import (
     WebAuthnCredentialMixin,
 )
 from house_backend.db import create_sqlite_engine
+from house_backend.mcp.catalog import Catalog
+from house_backend.mcp.endpoint import MCP_PATH, McpEndpoint, mcp_lifespan
+from house_backend.mcp.rest import RestCaller
 from house_backend.settings import HouseSettings
 
 
@@ -143,10 +149,11 @@ async def lifespan(app: FastAPI):
     db_path.chmod(0o600)
     app.state.engine = engine
     app.state.SessionFactory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-    try:
-        yield
-    finally:
-        engine.dispose()
+    async with mcp_lifespan(app, build_server, settings):
+        try:
+            yield
+        finally:
+            engine.dispose()
 
 
 app = FastAPI(title="multi", lifespan=lifespan)
@@ -180,3 +187,69 @@ def create_team(
     session.add(team)
     session.commit()
     return TeamOut(id=team.id, name=team.name)
+
+
+# ── MCP: one tool ────────────────────────────────────────────────────────────
+
+_ACCOUNTS = "accounts, passkeys, sessions and API tokens are managed by a person"
+
+CATALOG = Catalog(
+    tool_operations={"list_teams": (("GET", "/api/teams"),)},
+    equivalent={
+        ("GET", "/api/status"): "list_teams",
+        ("GET", "/api/auth/status"): "list_teams",
+        ("GET", "/api/auth/me"): "list_teams",
+        ("GET", "/api/auth/users"): "list_teams",
+        ("POST", "/api/teams"): "list_teams",
+    },
+    human_only={
+        (method, f"/api/auth/{path}"): _ACCOUNTS
+        for method, path in [
+            ("POST", "register/begin"),
+            ("POST", "register/complete"),
+            ("POST", "login/begin"),
+            ("POST", "login/complete"),
+            ("POST", "logout"),
+            ("POST", "users"),
+            ("PATCH", "users/{user_id}"),
+            ("DELETE", "users/{user_id}"),
+            ("POST", "users/{user_id}/reset-passkeys"),
+            ("GET", "credentials"),
+            ("POST", "credentials/begin"),
+            ("POST", "credentials/complete"),
+            ("PATCH", "credentials/{credential_id}"),
+            ("DELETE", "credentials/{credential_id}"),
+            ("GET", "sessions"),
+            ("DELETE", "sessions/{session_id}"),
+            ("GET", "tokens"),
+            ("POST", "tokens"),
+            ("DELETE", "tokens/{token_id}"),
+        ]
+    },
+)
+
+
+def _redact_team_names(method: str, template: str, data: Any) -> Any:
+    """The example's redaction hook: a team called "secret" is not shown."""
+    if template == "/api/teams":
+        return [t if t["name"] != "secret" else {**t, "name": "<redacted>"} for t in data]
+    return data
+
+
+rest = RestCaller(auth, CATALOG, redact=_redact_team_names)
+
+
+def build_server() -> MCPServer:
+    server = MCPServer(name="multi", instructions="The multi-user example app.")
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
+    async def list_teams(ctx: Context) -> dict[str, Any]:
+        """Every team, with its id."""
+        request = ctx.request_context.request
+        teams = await rest.call(request.app, request.headers.get("authorization"), "GET", "/api/teams")
+        return {"teams": teams}
+
+    return server
+
+
+app.router.routes.append(Route(MCP_PATH, endpoint=McpEndpoint(auth, "MCP requires an API token (Settings → Tokens)")))

@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "house-backend"
+dynamic = ["version"]
+description = "The shared backend code of a family of small FastAPI apps: passkey login, sessions, API tokens, the SQLite engine and the MCP plumbing"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.111",
+    "sqlalchemy>=2.0",
+    "pydantic-settings>=2.2",
+    "webauthn>=2.0",
+]
+
+[project.optional-dependencies]
+# The MCP plumbing (house_backend.mcp). The SDK keeps its <3 cap: its server
+# API changed between majors (PLAN D-8). httpx is the in-process transport.
+mcp = [
+    "mcp>=2.2,<3",
+    "httpx>=0.27",
+]
+# The pytest fixtures (house_backend.testing).
+test = [
+    "pytest>=7",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27",
+]
+
+[project.urls]
+Source = "https://github.com/kenjabber/house-backend"
+
+[tool.hatch.version]
+path = "house_backend/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["house_backend"]
+
+[tool.hatch.build.targets.sdist]
+exclude = ["docs/survey.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+# FastAPI's Depends(...) in argument defaults is the framework's idiom.
+ignore = ["B008"]

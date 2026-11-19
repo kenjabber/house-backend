@@ -7,8 +7,7 @@ not committed (PLAN D-3).
 
 | # | Item | Status |
 |---|------|--------|
-| 3 | [The db, fields and settings modules](#3-the-db-fields-and-settings-modules) | ready to start |
-| 4 | [The auth module](#4-the-auth-module) | after 3 |
+| 4 | [The auth module](#4-the-auth-module) | ready to start |
 | 5 | [The mcp module](#5-the-mcp-module) | after 4 |
 | 6 | [The testing and app modules](#6-the-testing-and-app-modules) | after 5 |
 | 7 | [USAGE.md and release v1.0.0](#7-usagemd-and-release-v100) | after 6 |
@@ -23,31 +22,6 @@ Next number: **13**.
 **Status key:** the shared one (`~/develop/backlog/TODO-FORMAT.md`).
 
 ---
-
-## 3. The db, fields and settings modules
-
-PLAN build order 2 (D-13, D-15, D-16, D-17). The survey names the copy to
-start from for each.
-
-- `house_backend.db`: `create_sqlite_engine(path)` (the five apps' factory,
-  taking a path, not a settings object); `snapshot(src, dest)`,
-  `backup_bytes(path)` and `restore_bytes(path, data, required_tables)` using
-  SQLite's backup API, with NetConfig's checks (the SQLite magic, the
-  required tables, checkpoint before restore, chmod 600 after);
-  `table_columns(conn, table)` and `table_exists(conn, table)`.
-- `house_backend.fields`: `UTCDateTime` (AppConfig's `api/fields.py`) and the
-  `x-house: plain` marker as a reusable `Field` extra, with helpers such as
-  `Plain[str]` if that reads well.
-- `house_backend.settings`: `HouseSettings` with D-13's names and the apps'
-  defaults.
-
-Tests: the pragmas are set on every connection; a snapshot taken while a
-second connection holds uncommitted and committed-but-uncheckpointed data
-contains the committed rows and opens without a `-wal` file; restore refuses
-a non-SQLite file and one missing a required table; a naive datetime
-serialises with its zone.
-
-**Done when:** the three modules are in place with those tests passing.
 
 ## 4. The auth module
 

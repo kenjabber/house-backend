@@ -1,15 +1,18 @@
 # CLAUDE.md — house-backend
 
 The shared backend package for Ken's web apps (AppConfig, kwicky, NestEgg,
-NetConfig, stocker). Planned on 2026-11-19; the code is not written yet.
+NetConfig, stocker). Built and released as v1.0.0 on 2026-11-19; each app
+adopts it through an item in its own backlog.
 
 **Where to look**
 
 | File | What it is |
 |---|---|
-| [TODO.md](TODO.md) | The backlog, in build order. Start here |
+| [USAGE.md](USAGE.md) | How an app uses it: each module, the options, the security behaviour, releasing |
+| [TODO.md](TODO.md) | The backlog. Start here |
 | [PLAN.md](PLAN.md) | The decisions (`D-n`). Decided plans only; open questions go in TODO.md |
 | `docs/survey.md` | The apps' current copies, file by file, and what an adopting session should know. In `.gitignore`: it describes the private apps and is never committed |
+| `tests/apps/` | The two example apps (single- and multi-user); every change is checked against them |
 | `~/develop/house-ui` | The frontend counterpart; its `PLAN.md`, `release.sh` and `README.md` are the model for this repo's |
 
 ## Rules

@@ -7,8 +7,7 @@ not committed (PLAN D-3).
 
 | # | Item | Status |
 |---|------|--------|
-| 6 | [The testing and app modules](#6-the-testing-and-app-modules) | ready to start |
-| 7 | [USAGE.md and release v1.0.0](#7-usagemd-and-release-v100) | after 6 |
+| 7 | [USAGE.md and release v1.0.0](#7-usagemd-and-release-v100) | ready to start |
 | 8 | [Write the adoption item into each app's backlog](#8-write-the-adoption-item-into-each-apps-backlog) | after 7 |
 | 9 | [Fold the vault client into house-backend](#9-fold-the-vault-client-into-house-backend) | optional |
 | 10 | [The MCP record-tool layer](#10-the-mcp-record-tool-layer) | idea |
@@ -20,25 +19,6 @@ Next number: **13**.
 **Status key:** the shared one (`~/develop/backlog/TODO-FORMAT.md`).
 
 ---
-
-## 6. The testing and app modules
-
-PLAN build order 4 (D-17).
-
-- `house_backend.testing`: the fixtures and helpers of the survey's
-  `conftest.py` row, usable as `pytest_plugins = ["house_backend.testing"]`
-  plus a few app-supplied fixtures (the app object, its `Base`), and the
-  parity checks as functions (`check_operations_partition(app, catalog)`,
-  `check_human_only_refuses_tokens(client, token, catalog)`), which an app's
-  own `test_mcp_parity.py` calls. Rewrite this repo's own tests onto them.
-- `house_backend.app`: `prepare_database(settings, path, Base, migrate)`
-  (directory, engine, `create_all`, the app's migration function, chmod 600,
-  `app.state`), `warn_if_auth_disabled`, `add_cors`, `mount_mcp`, and
-  `build_info()` (NetConfig's `services/build_info.py`). Helpers an app's
-  lifespan calls; not a function that builds the whole app (D-18).
-
-**Done when:** the example apps' `main` modules are a few lines of helpers
-plus their routers, and this repo's tests use `house_backend.testing` only.
 
 ## 7. USAGE.md and release v1.0.0
 

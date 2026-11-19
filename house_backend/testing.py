@@ -308,3 +308,55 @@ class FakePasskeys:
 @pytest.fixture
 def fake_passkeys(monkeypatch) -> FakePasskeys:
     return FakePasskeys(monkeypatch)
+
+
+# ── MCP parity checks ────────────────────────────────────────────────────────
+# An app's tests/test_mcp_parity.py calls these with its own app and catalog.
+
+
+def openapi_operations(app: Any) -> set[tuple[str, str]]:
+    """Every (METHOD, path template) the app's OpenAPI document lists."""
+    spec = app.openapi()
+    return {(method.upper(), path) for path, ops in spec["paths"].items() for method in ops}
+
+
+def check_operations_partition(app: Any, catalog: Any) -> None:
+    """Every REST operation is exactly one of exposed, equivalent or
+    human-only; the catalog names no operation the app no longer serves; and
+    every equivalent names a real tool."""
+    exposed, equivalent, human = catalog.exposed_operations(), set(catalog.equivalent), set(catalog.human_only)
+    actual = openapi_operations(app)
+    unclassified = sorted(actual - (exposed | equivalent | human))
+    assert not unclassified, f"unclassified REST operations (classify them in the MCP catalog): {unclassified}"
+    stale = sorted((exposed | equivalent | human) - actual)
+    assert not stale, f"the catalog names operations the app no longer serves: {stale}"
+    overlap = sorted((exposed & equivalent) | (exposed & human) | (equivalent & human))
+    assert not overlap, f"operations classified twice: {overlap}"
+    unknown = sorted(set(catalog.equivalent.values()) - set(catalog.tool_names()))
+    assert not unknown, f"equivalents name tools that do not exist: {unknown}"
+    assert catalog.human_only_enforced <= human, "human_only_enforced names operations not in human_only"
+
+
+def check_tools_match_catalog(mcp: McpClient, catalog: Any) -> None:
+    """The server registers exactly the catalog's tools, each documented and annotated."""
+    tools = mcp.tools()
+    assert sorted(tools) == sorted(catalog.tool_names())
+    for name, tool in tools.items():
+        assert tool.get("description", "").strip(), f"{name} has no description"
+        assert "readOnlyHint" in (tool.get("annotations") or {}), f"{name} has no annotations"
+
+
+def check_human_only_refuses_tokens(
+    client: TestClient, token: str, catalog: Any, path_values: dict[str, str] | None = None
+) -> None:
+    """Every enforced human-only operation refuses an API token with 403: the
+    hold-backs are enforced at the REST layer, not just left out of the tools.
+    Path parameters are filled from ``path_values`` (default ``"1"``)."""
+    import string
+
+    headers = {"authorization": f"Bearer {token}"}
+    for method, path in sorted(catalog.human_only_enforced):
+        names = [field for _, field, _, _ in string.Formatter().parse(path) if field]
+        url = path.format(**{name: (path_values or {}).get(name, "1") for name in names})
+        response = client.request(method, url, headers=headers, json={})
+        assert response.status_code == 403, f"{method} {path} → {response.status_code}"

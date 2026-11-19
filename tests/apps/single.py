@@ -9,8 +9,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import Depends, FastAPI
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.orm import DeclarativeBase
 
+from house_backend.app import add_cors, prepare_database
 from house_backend.auth import (
     ApiTokenMixin,
     AuthModels,
@@ -20,7 +21,6 @@ from house_backend.auth import (
     WebAuthnChallengeMixin,
     WebAuthnCredentialMixin,
 )
-from house_backend.db import create_sqlite_engine
 from house_backend.settings import HouseSettings
 
 
@@ -68,13 +68,7 @@ require_user = auth.require_user
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     auth.warn_if_auth_disabled()
-    db_path = Path(settings.SQLITE_PATH)
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    engine = create_sqlite_engine(db_path)
-    Base.metadata.create_all(engine)
-    db_path.chmod(0o600)
-    app.state.engine = engine
-    app.state.SessionFactory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    engine = prepare_database(app, settings.SQLITE_PATH, Base)
     try:
         yield
     finally:
@@ -82,6 +76,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="single", lifespan=lifespan)
+add_cors(app, settings)
 app.include_router(auth.router(), prefix="/api")
 
 

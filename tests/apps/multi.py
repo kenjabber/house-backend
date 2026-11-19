@@ -17,10 +17,10 @@ from fastapi import Depends, FastAPI, HTTPException
 from mcp.server.mcpserver import Context, MCPServer
 from mcp_types import ToolAnnotations
 from pydantic import BaseModel
-from sqlalchemy import ForeignKey, Integer, String, func, select
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
-from starlette.routing import Route
+from sqlalchemy import ForeignKey, Integer, String, func, select, text
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
+from house_backend.app import add_cors, mount_mcp, prepare_database
 from house_backend.auth import (
     ApiTokenMixin,
     AuthModels,
@@ -31,9 +31,9 @@ from house_backend.auth import (
     WebAuthnChallengeMixin,
     WebAuthnCredentialMixin,
 )
-from house_backend.db import create_sqlite_engine
+from house_backend.db import table_columns
 from house_backend.mcp.catalog import Catalog
-from house_backend.mcp.endpoint import MCP_PATH, McpEndpoint, mcp_lifespan
+from house_backend.mcp.endpoint import mcp_lifespan
 from house_backend.mcp.rest import RestCaller
 from house_backend.settings import HouseSettings
 
@@ -57,6 +57,7 @@ class Team(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    note: Mapped[str | None] = mapped_column(String(120), nullable=True)
 
 
 class User(UserMixin, Base):
@@ -142,13 +143,7 @@ get_db_session = auth.get_db_session
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     auth.warn_if_auth_disabled()
-    db_path = Path(settings.SQLITE_PATH)
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    engine = create_sqlite_engine(db_path)
-    Base.metadata.create_all(engine)
-    db_path.chmod(0o600)
-    app.state.engine = engine
-    app.state.SessionFactory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    engine = prepare_database(app, settings.SQLITE_PATH, Base, migrate=migrate)
     async with mcp_lifespan(app, build_server, settings):
         try:
             yield
@@ -156,7 +151,15 @@ async def lifespan(app: FastAPI):
             engine.dispose()
 
 
+def migrate(engine) -> None:
+    """The app's migrations: here, one that adds a column old databases lack."""
+    with engine.begin() as conn:
+        if "note" not in table_columns(conn, "team"):
+            conn.execute(text("ALTER TABLE team ADD COLUMN note VARCHAR(120)"))
+
+
 app = FastAPI(title="multi", lifespan=lifespan)
+add_cors(app, settings)
 app.include_router(auth.router(), prefix="/api")
 
 
@@ -252,4 +255,4 @@ def build_server() -> MCPServer:
     return server
 
 
-app.router.routes.append(Route(MCP_PATH, endpoint=McpEndpoint(auth, "MCP requires an API token (Settings → Tokens)")))
+mount_mcp(app, auth, "MCP requires an API token (Settings → Tokens)")

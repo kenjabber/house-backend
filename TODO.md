@@ -7,7 +7,6 @@ not committed (PLAN D-3).
 
 | # | Item | Status |
 |---|------|--------|
-| 8 | [Write the adoption item into each app's backlog](#8-write-the-adoption-item-into-each-apps-backlog) | ready to start |
 | 9 | [Fold the vault client into house-backend](#9-fold-the-vault-client-into-house-backend) | optional |
 | 10 | [The MCP record-tool layer](#10-the-mcp-record-tool-layer) | idea |
 | 11 | [A check that an app holds no copies](#11-a-check-that-an-app-holds-no-copies) | idea |
@@ -18,33 +17,6 @@ Next number: **13**.
 **Status key:** the shared one (`~/develop/backlog/TODO-FORMAT.md`).
 
 ---
-
-## 8. Write the adoption item into each app's backlog
-
-PLAN build order 6. One item in each of `~/develop/kwicky/TODO.md`,
-`appconfig`, `netconfig`, `nestegg` and stocker's backlog
-(`~/develop/stocker/docs/todo.md`), each a brief a fresh session can start
-from: the steps of build order 6, that app's row and notes from
-`docs/survey.md`, and its own checks. Per app:
-
-- **kwicky** — first. `multi_user`, `api_tokens`; `group_ids` on the user
-  detail through the extension point.
-- **AppConfig** — single user. It is deployed by `deploy/deploy-local.sh`,
-  not by itself; its `persistence/db.py` keeps `prepare_schema`.
-- **NetConfig** — single user. `require_actor`; the redactor with its own
-  names and pattern; `db_admin.py` onto `house_backend.db`; timestamps gain
-  a zone (check the Settings screens and the tests that compare them).
-- **NestEgg** — `multi_user`, households through the extension points; teach
-  `mcp_server/redact.py` and `classification_gaps` that `x-house: plain` is
-  plain (D-16); its Python floor is 3.14, which is fine.
-- **stocker** — last. `multi_user`, `api_tokens` off, so its behaviour does
-  not change; its `Settings` gains `AUTH_DISABLED` (default off) by
-  inheritance. Whether stocker should then get API tokens is its own
-  question for Ken, not part of adoption.
-
-Run `~/develop/backlog/check-todo.py` on each file edited.
-
-**Done when:** the five items exist, pass `check-todo.py`, and are pushed.
 
 ## 9. Fold the vault client into house-backend
 

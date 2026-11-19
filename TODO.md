@@ -7,8 +7,7 @@ not committed (PLAN D-3).
 
 | # | Item | Status |
 |---|------|--------|
-| 1 | [Create the GitHub repo and push](#1-create-the-github-repo-and-push) | ready to start |
-| 2 | [Package skeleton and release script](#2-package-skeleton-and-release-script) | after 1 |
+| 2 | [Package skeleton and release script](#2-package-skeleton-and-release-script) | ready to start |
 | 3 | [The db, fields and settings modules](#3-the-db-fields-and-settings-modules) | after 2 |
 | 4 | [The auth module](#4-the-auth-module) | after 3 |
 | 5 | [The mcp module](#5-the-mcp-module) | after 4 |
@@ -25,25 +24,6 @@ Next number: **13**.
 **Status key:** the shared one (`~/develop/backlog/TODO-FORMAT.md`).
 
 ---
-
-## 1. Create the GitHub repo and push
-
-The repo was started on 2026-11-19 by a session that had no GitHub
-credentials: it has one local commit (PLAN.md, TODO.md, README.md,
-CLAUDE.md, .gitignore; `docs/survey.md` is ignored and stays local) on `main`, the noreply email set in its git
-config (PLAN D-3), and no remote.
-
-```bash
-cd ~/develop/house-backend
-gh repo create kenjabber/house-backend --public --source . --remote origin --push \
-  --description "Shared backend package for Ken's web apps"
-```
-
-Before pushing, read every file once more for anything D-3 forbids (a
-hostname, an address, a user name): the repo is public from its first push.
-
-**Done when:** `gh repo view kenjabber/house-backend --json visibility` says
-`PUBLIC` and `git status` shows `main` level with `origin/main`.
 
 ## 2. Package skeleton and release script
 

@@ -1,8 +1,9 @@
 # CLAUDE.md — house-backend
 
 The shared backend package for Ken's web apps (AppConfig, kwicky, NestEgg,
-NetConfig, stocker). Built and released as v1.0.0 on 2026-11-19; each app
-adopts it through an item in its own backlog.
+NetConfig, stocker). Built on 2026-11-19; all five apps run on it (each
+pinned to a release in its `backend/pyproject.toml`, v2.1.0 on 2026-11-19).
+A change here is released, then each app bumps its pin (PLAN D-24).
 
 **Where to look**
 

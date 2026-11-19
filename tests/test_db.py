@@ -102,3 +102,18 @@ def test_table_helpers(db):
         assert table_columns(conn, "note") == {"id", "body"}
         assert table_columns(conn, "nothing") == set()
     engine.dispose()
+
+
+def test_snapshot_leaves_the_source_untouched(tmp_path):
+    """A snapshot only reads: the source's size and modification time stay
+    (from stocker's suite, where the start-up backup runs on the live file)."""
+    src = tmp_path / "source.db"
+    con = sqlite3.connect(src)
+    con.execute("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+    con.commit()
+    con.close()
+    before = src.stat()
+    snapshot(src, tmp_path / "snapshot.db")
+    after = src.stat()
+    assert (after.st_size, after.st_mtime) == (before.st_size, before.st_mtime)
+    assert (tmp_path / "snapshot.db").exists()

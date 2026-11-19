@@ -17,6 +17,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from webauthn import (
     generate_authentication_options,
@@ -98,8 +99,16 @@ class PasskeyService:
         return session.query(self._m.WebAuthnCredential).first() is not None
 
     def get_user_by_username(self, session: Session, username: str) -> Any | None:
-        user = self._m.User
-        return session.query(user).filter(user.username == username).first()
+        """The user called ``username``. Multi-user apps lower-case new
+        usernames, but an older account may have been stored as typed
+        (``Ken``): with ``multi_user``, a name with no exact match finds the
+        one account that matches it ignoring case (none if several do)."""
+        model = self._m.User
+        user = session.query(model).filter(model.username == username).first()
+        if user is None and self.auth.multi_user:
+            matches = session.query(model).filter(func.lower(model.username) == username.lower()).limit(2).all()
+            user = matches[0] if len(matches) == 1 else None
+        return user
 
     def list_user_credentials(self, session: Session, user_id: str) -> list[Any]:
         cred = self._m.WebAuthnCredential

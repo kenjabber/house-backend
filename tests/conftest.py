@@ -1,1 +1,1 @@
-pytest_plugins = ["house_backend.testing"]
+pytest_plugins = ["house_backend.testing", "pytester"]

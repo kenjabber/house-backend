@@ -397,7 +397,7 @@ fixtures (see [A new app](#a-new-app)). Optional overrides: `house_db_setting`
 | Fixture | |
 |---|---|
 | `engine`, `session` | A throw-away database (the setting is pointed at it, so the app's lifespan opens it too) |
-| `client` | A `TestClient` with the lifespan run |
+| `client` | A `TestClient` with the lifespan run; `app.state.SessionFactory` is set on the test database first, so `house_app` may be an app of the routers alone when the real lifespan starts work tests must not run |
 | `seed_user(user_id=, username=, is_admin=, **columns)` | A user row |
 | `login_as(client, user)` | Gives the client a session cookie for `user` |
 | `admin`, `member` | `alex` (admin) and `sam` |

@@ -213,3 +213,18 @@ def test_every_shared_scalar_field_is_plain_and_no_model_field_is():
                 assert "x-house" not in prop, f"{name}.{field} holds a model"
             else:
                 assert prop.get("x-house") == "plain", f"{name}.{field}"
+
+
+def test_an_older_mixed_case_username_is_found(client, session, seed_user, house_auth, fake_passkeys):
+    """An account stored as typed (before usernames were lower-cased) signs in
+    and is found by the admin's duplicate check, whatever the case typed."""
+    seed_user()  # alex, the admin
+    _give_passkey(session, house_auth, "test-admin")
+    older = seed_user(user_id="u-old", username="Pat", is_admin=False)
+    _give_passkey(session, house_auth, older.id)
+    assert house_auth.service.get_user_by_username(session, "pat").id == older.id
+    options = client.post("/api/auth/login/begin", json={"username": "PAT"}).json()
+    assert len(options["allowCredentials"]) == 1  # only that account's passkey
+    seed_user(user_id="u-twin", username="PAT", is_admin=False)
+    assert house_auth.service.get_user_by_username(session, "pat") is None  # ambiguous: no guess
+    assert house_auth.service.get_user_by_username(session, "Pat").id == older.id  # exact still wins

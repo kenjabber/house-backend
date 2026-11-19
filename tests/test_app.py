@@ -127,3 +127,49 @@ def test_build_info_is_read_once_until_the_cache_is_cleared(tmp_path):
     assert build_info(build)["commit"] == "a" * 40
     build_info.cache_clear()
     assert build_info(build)["commit"] == "b" * 40
+
+
+def test_the_client_fixture_serves_an_app_without_a_lifespan(pytester):
+    """An app of the routers alone (no lifespan) gets a SessionFactory on the
+    test database from the shared ``client`` fixture."""
+    pytester.makeini("[pytest]\nasyncio_mode = auto\nasyncio_default_fixture_loop_scope = function\n")
+    pytester.makeconftest(
+        """
+import pytest
+from fastapi import FastAPI
+from tests_apps_single import single
+
+pytest_plugins = ["house_backend.testing"]
+bare = FastAPI()
+bare.include_router(single.auth.router(), prefix="/api")
+
+@pytest.fixture
+def house_app():
+    return bare
+
+@pytest.fixture
+def house_auth():
+    return single.auth
+
+@pytest.fixture
+def house_base():
+    return single.Base
+"""
+    )
+    pytester.makepyfile(
+        """
+def test_bare(auth_client):
+    assert auth_client.get("/api/auth/me").json()["username"] == "alex"
+
+
+def test_bare_member(member_client):
+    assert member_client.get("/api/auth/me").json()["username"] == "sam"
+"""
+    )
+    import shutil
+    from pathlib import Path
+
+    shutil.copytree(Path(__file__).parent / "apps", pytester.path / "tests_apps_single")
+    pytester.syspathinsert()
+    result = pytester.runpytest_inprocess("-p", "no:cacheprovider")
+    result.assert_outcomes(passed=2)

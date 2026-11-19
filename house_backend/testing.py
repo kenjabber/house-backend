@@ -109,9 +109,19 @@ def session(engine) -> Iterator[Session]:
 
 @pytest.fixture
 def client(engine, house_app) -> Iterator[TestClient]:
-    """A TestClient with the app's lifespan run against the throw-away database."""
+    """A TestClient with the app's lifespan run against the throw-away database.
+
+    ``app.state.SessionFactory`` is set on the test database first, so
+    ``house_app`` may also be an app of the routers alone, without the real
+    lifespan (an app whose start-up runs background work the tests must not
+    start); a lifespan that sets its own replaces it, on the same file."""
+    _use_test_database(house_app, engine)
     with TestClient(house_app) as c:
         yield c
+
+
+def _use_test_database(app: Any, engine: Engine) -> None:
+    app.state.SessionFactory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
 # ── Users and sign-in ────────────────────────────────────────────────────────
@@ -188,6 +198,7 @@ def auth_client(client, admin, login_as) -> TestClient:
 @pytest.fixture
 def member_client(engine, house_app, member, login_as) -> Iterator[TestClient]:
     """A second client, signed in as a non-admin member."""
+    _use_test_database(house_app, engine)
     with TestClient(house_app) as c:
         yield login_as(c, member)
 

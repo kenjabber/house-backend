@@ -162,6 +162,14 @@ Implementation starts at the build order (§8).
   the marker lets NestEgg's redactor and parity test accept them by rule
   instead of by a list of names.
 
+- **D-27** **NestEgg follows the shared patterns** (Ken, 2026-11-19: it is
+  new and unused). Where NestEgg alone differs from the other apps, NestEgg
+  changes and house-backend gains no option for it, and D-9 does not bind
+  it: its `user` table puts its own columns (`household_id`, `person_id`)
+  after the shared ones, and `GET /api/auth/users` is open to an admin's API
+  token, as in kwicky (creating, changing and deleting accounts stays
+  human-only).
+
 ## 4. What is in it
 
 - **D-17** **Modules.** Each replaces the copies `docs/survey.md` lists for it.

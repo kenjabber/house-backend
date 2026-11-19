@@ -7,8 +7,7 @@ not committed (PLAN D-3).
 
 | # | Item | Status |
 |---|------|--------|
-| 4 | [The auth module](#4-the-auth-module) | ready to start |
-| 5 | [The mcp module](#5-the-mcp-module) | after 4 |
+| 5 | [The mcp module](#5-the-mcp-module) | ready to start |
 | 6 | [The testing and app modules](#6-the-testing-and-app-modules) | after 5 |
 | 7 | [USAGE.md and release v1.0.0](#7-usagemd-and-release-v100) | after 6 |
 | 8 | [Write the adoption item into each app's backlog](#8-write-the-adoption-item-into-each-apps-backlog) | after 7 |
@@ -22,44 +21,6 @@ Next number: **13**.
 **Status key:** the shared one (`~/develop/backlog/TODO-FORMAT.md`).
 
 ---
-
-## 4. The auth module
-
-PLAN build order 3 (D-9 to D-12, D-14, D-21). The largest item; the survey's
-rows for `services/auth.py`, `api/dependencies/auth.py`,
-`api/routers/auth.py`, `services/api_tokens.py` and the auth tables say what
-differs between the copies. Start from kwicky's copies (multi-user, no
-app-specific columns) and AppConfig's `UTCDateTime`.
-
-1. **Mixins** (`auth/models.py`): the five tables' columns as declarative
-   mixins, with `declared_attr` where a column has a foreign key. Check them
-   against NetConfig's and NestEgg's `schema.py` column by column (types,
-   lengths, nullability, defaults, indexes, `ondelete`).
-2. **`HouseAuth`** (D-11): holds the app name, settings, model classes and
-   options; no module-level state (the rate limiter's hit table becomes an
-   attribute).
-3. **Service**: the functions of `services/auth.py` and
-   `services/api_tokens.py` as methods or functions taking the `HouseAuth`.
-4. **Dependencies**: `get_db_session`, `require_user`, `require_admin`,
-   `require_human`, `require_human_admin`, `require_actor`,
-   `current_user_or_none`, `is_agent_request`, `bearer_token`, and the
-   constants (`SESSION_COOKIE_NAME`, `VIA_HEADER`, `VIA_MCP`) as attributes.
-5. **Router**: `auth.router()` gives the `APIRouter` the app includes under
-   `/api`: the 17 routes, the 5 user routes when `multi_user`, the 3 token
-   routes only when `api_tokens`. Response models use `UTCDateTime` (D-15)
-   and the `x-house` marker (D-16).
-6. **Extension points** (D-12), decided here with the two example apps as the
-   proof: extra response fields per user, extra accepted fields on user
-   create and edit, and the values for a new or bootstrap user row.
-7. **Example apps** (`tests/apps/single.py`, `tests/apps/multi.py`; D-21)
-   and the tests: port kwicky's and NestEgg's `tests/test_auth.py`, and add
-   one test per line of D-14. WebAuthn ceremonies are faked the way those
-   suites do it.
-
-**Done when:** both example apps pass; a database created by NetConfig's
-current `schema.py` and one created by the single-user example app have the
-same `.schema` for the five tables, and likewise kwicky's against the
-multi-user example; every invariant of D-14 has a test.
 
 ## 5. The mcp module
 

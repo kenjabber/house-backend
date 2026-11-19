@@ -351,7 +351,7 @@ Helpers a lifespan and `main.py` call; not a function that builds the app
 | `prepare_database(app, path, Base, migrate=None)` | Makes the directory, opens the engine, `create_all`, runs `migrate(engine)`, makes the file mode 600, sets `app.state.engine` and `app.state.SessionFactory`; returns the engine |
 | `add_cors(app, settings)` | CORS for the WebAuthn origins, with credentials |
 | `mount_mcp(app, auth, unauthorized_detail)` | Adds the raw `/mcp` route |
-| `build_info(build_file)` | The running commit: from `build_file` when a `git archive` filled its `$Format:%H$` and `$Format:%cI$`, else from git; `commit`, `short`, `committed_at`, `dirty`, `source`, `started_at` |
+| `build_info(build_file)` | The running commit: from `build_file` when a `git archive` filled its `$Format:%H$` and `$Format:%cI$`, else from git; `commit`, `short`, `committed_at`, `dirty`, `source`, `started_at`; read once per process, `build_info.cache_clear()` for tests |
 
 ### `house_backend.testing`
 

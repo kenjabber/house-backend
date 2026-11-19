@@ -139,7 +139,12 @@ def build_info(build_file: str | os.PathLike[str]) -> dict[str, Any]:
     Returns ``commit`` (full SHA or None), ``short``, ``committed_at``,
     ``dirty`` (True only for a checkout with uncommitted changes to tracked
     files), ``source`` (``archive``, ``git`` or ``unknown``) and
-    ``started_at``, when this process started. Read once per process."""
+    ``started_at``, when this process started. Read once per process
+    (``build_info.cache_clear()`` forgets it, for tests)."""
     found = _identity(Path(build_file).resolve())
     commit = found["commit"]
     return {**found, "short": commit[:12] if commit else None, "started_at": STARTED_AT}
+
+
+# The identity is read once per process; a test that rewrites the file clears it.
+build_info.cache_clear = _identity.cache_clear  # type: ignore[attr-defined]

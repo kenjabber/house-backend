@@ -116,3 +116,14 @@ def test_the_partition_check_names_what_is_wrong():
         )
     with pytest.raises(AssertionError, match="tools that do not exist"):
         check_operations_partition(app, Catalog({"t": (("GET", "/api/a"),)}, {("GET", "/api/b"): "nope"}, {}))
+
+
+def test_build_info_is_read_once_until_the_cache_is_cleared(tmp_path):
+    build = tmp_path / "b" / "build.json"
+    build.parent.mkdir()
+    build.write_text(json.dumps({"commit": "a" * 40}))
+    assert build_info(build)["commit"] == "a" * 40
+    build.write_text(json.dumps({"commit": "b" * 40}))
+    assert build_info(build)["commit"] == "a" * 40
+    build_info.cache_clear()
+    assert build_info(build)["commit"] == "b" * 40

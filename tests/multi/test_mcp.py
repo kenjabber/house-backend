@@ -107,3 +107,18 @@ def test_rest_fills_the_path_and_query_and_returns_raw_text(client, api_token, h
     caller = RestCaller(house_auth, Catalog({"t": (("GET", "/api/status"),)}, {}, {}))
     out = asyncio.run(caller.call(multi.app, f"Bearer {api_token}", "GET", "/api/status", query={"x": True}, raw=True))
     assert out == '{"status":"ok"}'
+
+
+def test_rest_sends_raw_content(client, api_token, house_auth):
+    caller = RestCaller(house_auth, Catalog({"t": (("PUT", "/api/teams/{team_id}/badge"),)}, {}, {}))
+    out = asyncio.run(
+        caller.call(
+            multi.app,
+            f"Bearer {api_token}",
+            "PUT",
+            "/api/teams/{team_id}/badge",
+            path={"team_id": 1},
+            content=b"\x89PNG raw bytes",
+        )
+    )
+    assert out == {"team_id": 1, "bytes": len(b"\x89PNG raw bytes")}

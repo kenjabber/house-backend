@@ -59,12 +59,14 @@ class RestCaller:
         path: dict[str, Any] | None = None,
         query: dict[str, Any] | None = None,
         body: Any = None,
+        content: bytes | None = None,
         raw: bool = False,
     ) -> Any:
         """Call one REST operation; returns the parsed JSON (the text when ``raw``).
 
         ``template`` is the OpenAPI path template (``/api/items/{item_id}``);
-        ``path`` fills its parameters. A 4xx or 5xx becomes a ``ToolError``
+        ``path`` fills its parameters; ``body`` is sent as JSON, ``content``
+        as raw bytes (a file upload). A 4xx or 5xx becomes a ``ToolError``
         carrying the API's own ``detail``, so the model sees why it failed."""
         if (method, template) not in self.catalog.exposed_operations():
             raise RuntimeError(f"{method} {template} is not an exposed MCP operation")
@@ -79,7 +81,7 @@ class RestCaller:
         async with httpx.AsyncClient(
             transport=httpx.ASGITransport(app=app), base_url=self.base_url, timeout=None
         ) as client:
-            response = await client.request(method, url, params=params, json=body, headers=headers)
+            response = await client.request(method, url, params=params, json=body, content=content, headers=headers)
 
         if response.status_code >= 400:
             raise ToolError(f"{response.status_code} {method} {url}: {error_detail(response)}")

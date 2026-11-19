@@ -18,6 +18,8 @@ attribute holding the database path, default ``SQLITE_PATH``) and
 The fixtures: ``engine``, ``session``, ``client``, ``seed_user``, ``login_as``,
 ``admin``, ``member``, ``auth_client``, ``member_client``, ``api_token``,
 ``mcp`` (an :class:`McpClient`) and ``fake_passkeys`` (a :class:`FakePasskeys`).
+:func:`seed_user` and :func:`login_as` are also plain functions, for an
+app's own helpers (``seed_user(session, …)`` kept with its old signature).
 ``AUTH_DISABLED`` is pinned off for every test, since a developer's ``.env``
 may set it. The MCP parity checks are functions an app's test calls:
 :func:`check_operations_partition` and :func:`check_human_only_refuses_tokens`.
@@ -115,42 +117,54 @@ def client(engine, house_app) -> Iterator[TestClient]:
 # ── Users and sign-in ────────────────────────────────────────────────────────
 
 
-@pytest.fixture
-def seed_user(session, house_auth, house_user_values) -> Callable[..., Any]:
+def seed_user(
+    auth: HouseAuth,
+    session: Session,
+    user_id: str = "test-admin",
+    username: str = "alex",
+    is_admin: bool = True,
+    **values: Any,
+) -> Any:
+    """A user row with ``values`` as the app's own columns (returned as it
+    is if the id exists). For an app's own helpers; tests use the fixture."""
+    model = auth.models.User
+    user = session.get(model, user_id)
+    if user is None:
+        user = model(id=user_id, username=username, display_name=username.capitalize(), is_admin=is_admin, **values)
+        session.add(user)
+        session.commit()
+    return user
+
+
+def login_as(auth: HouseAuth, client: TestClient, session: Session, user: Any) -> TestClient:
+    """Give ``client`` a session cookie for ``user`` (a session row, a day long)."""
+    sid = f"session-{user.id}"
+    model = auth.models.UserSession
+    if session.get(model, sid) is None:
+        expires = datetime.now(UTC).replace(tzinfo=None) + timedelta(days=1)
+        session.add(model(session_id=sid, user_id=user.id, expires_at=expires))
+        session.commit()
+    client.cookies.set(auth.SESSION_COOKIE_NAME, sid)
+    return client
+
+
+@pytest.fixture(name="seed_user")
+def _seed_user_fixture(session, house_auth, house_user_values) -> Callable[..., Any]:
     """``seed_user(user_id="u1", username="alex", is_admin=True, **columns)``:
-    a user row (returned as it is if the id exists)."""
+    :func:`seed_user` for this app, with ``house_user_values`` filled in."""
 
     def seed(user_id: str = "test-admin", username: str = "alex", is_admin: bool = True, **values: Any) -> Any:
-        model = house_auth.models.User
-        user = session.get(model, user_id)
-        if user is None:
-            user = model(
-                id=user_id,
-                username=username,
-                display_name=username.capitalize(),
-                is_admin=is_admin,
-                **{**house_user_values, **values},
-            )
-            session.add(user)
-            session.commit()
-        return user
+        return seed_user(house_auth, session, user_id, username, is_admin, **{**house_user_values, **values})
 
     return seed
 
 
-@pytest.fixture
-def login_as(session, house_auth) -> Callable[[TestClient, Any], TestClient]:
-    """``login_as(client, user)``: give ``client`` a session cookie for ``user``."""
+@pytest.fixture(name="login_as")
+def _login_as_fixture(session, house_auth) -> Callable[[TestClient, Any], TestClient]:
+    """``login_as(client, user)``: :func:`login_as` for this app."""
 
     def login(client: TestClient, user: Any) -> TestClient:
-        sid = f"session-{user.id}"
-        model = house_auth.models.UserSession
-        if session.get(model, sid) is None:
-            expires = datetime.now(UTC).replace(tzinfo=None) + timedelta(days=1)
-            session.add(model(session_id=sid, user_id=user.id, expires_at=expires))
-            session.commit()
-        client.cookies.set(house_auth.SESSION_COOKIE_NAME, sid)
-        return client
+        return login_as(house_auth, client, session, user)
 
     return login
 

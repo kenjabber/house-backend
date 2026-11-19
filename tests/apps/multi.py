@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from mcp.server.mcpserver import Context, MCPServer
 from mcp_types import ToolAnnotations
 from pydantic import BaseModel
@@ -192,6 +192,12 @@ def create_team(
     return TeamOut(id=team.id, name=team.name)
 
 
+@app.put("/api/teams/{team_id}/badge")
+async def put_badge(team_id: int, request: Request, _admin: Any = Depends(auth.require_admin)) -> dict[str, int]:
+    """A raw upload (the request body is the file), as file routes take."""
+    return {"team_id": team_id, "bytes": len(await request.body())}
+
+
 # ── MCP: one tool ────────────────────────────────────────────────────────────
 
 _ACCOUNTS = "accounts, passkeys, sessions and API tokens are managed by a person"
@@ -204,6 +210,7 @@ CATALOG = Catalog(
         ("GET", "/api/auth/me"): "list_teams",
         ("GET", "/api/auth/users"): "list_teams",
         ("POST", "/api/teams"): "list_teams",
+        ("PUT", "/api/teams/{team_id}/badge"): "list_teams",
     },
     human_only={
         (method, f"/api/auth/{path}"): _ACCOUNTS

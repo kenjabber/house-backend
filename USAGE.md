@@ -322,7 +322,8 @@ async def _api(ctx, method, template, **kwargs):       # in the app's tools.py
   is the `/mcp` route (`house_backend.app.mount_mcp` adds it).
   `transport_security(settings)` is the Host/Origin allow-list.
 - **rest**: `RestCaller.call(app, authorization, method, template, path=,
-  query=, body=, raw=)` calls one REST operation in-process. It refuses an
+  query=, body=, content=, raw=)` calls one REST operation in-process
+  (`body` is sent as JSON, `content` as raw bytes, for an upload). It refuses an
   operation the catalog does not expose, marks the request with the via
   header, turns a 4xx/5xx into a `ToolError` with the API's `detail`, and
   passes the result (the text, when `raw`) through the redaction hook
@@ -371,6 +372,32 @@ fixtures (see [A new app](#a-new-app)). Optional overrides: `house_db_setting`
 | `fake_passkeys` | `FakePasskeys`: replaces the `webauthn` library's two verify functions and builds the browser's answers (`registration(options, name)`, `assertion(options, name)`, `credential_id(name)`); the challenges, credentials, counters and checks around them are real |
 
 `AUTH_DISABLED` is pinned off for every test and the rate limiter is reset.
+
+`seed_user(auth, session, user_id=, username=, is_admin=, **columns)` and
+`login_as(auth, client, session, user)` are also plain functions, so an app
+keeps its own helpers' signatures and its tests' calls unchanged:
+
+```python
+pytest.register_assert_rewrite("house_backend.testing")   # before importing it
+
+from house_backend import testing  # noqa: E402
+
+def seed_user(session, user_id="test-admin", username="ken", is_admin=True):
+    return testing.seed_user(auth, session, user_id, username, is_admin)
+
+def login_as(client, session, user):
+    return testing.login_as(auth, client, session, user)
+
+@pytest.fixture
+def admin(session):          # overrides the shared one ("alex")
+    return seed_user(session)
+```
+
+A conftest that imports `house_backend.testing` calls
+`pytest.register_assert_rewrite` first, as above; otherwise pytest warns that
+it cannot rewrite the module's asserts. A fixture of the same name in the
+app's conftest overrides the shared one and may request it
+(`def engine(engine, pages_dir): return engine`).
 
 The MCP parity checks, for the app's `tests/test_mcp_parity.py`:
 

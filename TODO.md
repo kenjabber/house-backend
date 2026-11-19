@@ -7,8 +7,7 @@ not committed (PLAN D-3).
 
 | # | Item | Status |
 |---|------|--------|
-| 2 | [Package skeleton and release script](#2-package-skeleton-and-release-script) | ready to start |
-| 3 | [The db, fields and settings modules](#3-the-db-fields-and-settings-modules) | after 2 |
+| 3 | [The db, fields and settings modules](#3-the-db-fields-and-settings-modules) | ready to start |
 | 4 | [The auth module](#4-the-auth-module) | after 3 |
 | 5 | [The mcp module](#5-the-mcp-module) | after 4 |
 | 6 | [The testing and app modules](#6-the-testing-and-app-modules) | after 5 |
@@ -24,28 +23,6 @@ Next number: **13**.
 **Status key:** the shared one (`~/develop/backlog/TODO-FORMAT.md`).
 
 ---
-
-## 2. Package skeleton and release script
-
-PLAN build order 1 (D-2, D-4 to D-8, D-25).
-
-- `pyproject.toml`: hatchling, name `house-backend`, `requires-python =
-  ">=3.13"`, the core dependencies and the `mcp` and `test` extras of D-8,
-  pytest (`asyncio_mode = "auto"`, `asyncio_default_fixture_loop_scope =
-  "function"`), ruff with D-25's rules. The version lives in one place
-  (`house_backend/__init__.py`, read by hatch).
-- `house_backend/__init__.py` with `__version__`, and `py.typed`.
-- `release.sh`, modelled line for line on `~/develop/house-ui/release.sh`:
-  the same guards (on `main`, clean, level with origin, tag unused, repo
-  public), then `ruff check`, `pytest`, set the version, `python -m build
-  --wheel`, commit `Release vX.Y.Z`, tag, `git push --atomic`, `gh release
-  create` with the wheel, and the final `curl` of the public URL. Keep
-  `--dry-run`.
-- `.gitignore` already covers `dist/`, virtualenvs and caches.
-
-**Done when:** `pip install -e '.[mcp,test]'` works in a fresh 3.13
-virtualenv, `pytest` and `ruff check` pass (one trivial test), and
-`./release.sh --dry-run 0.0.1` builds a wheel and undoes the version bump.
 
 ## 3. The db, fields and settings modules
 

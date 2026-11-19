@@ -7,28 +7,17 @@ not committed (PLAN D-3).
 
 | # | Item | Status |
 |---|------|--------|
-| 7 | [USAGE.md and release v1.0.0](#7-usagemd-and-release-v100) | ready to start |
-| 8 | [Write the adoption item into each app's backlog](#8-write-the-adoption-item-into-each-apps-backlog) | after 7 |
+| 8 | [Write the adoption item into each app's backlog](#8-write-the-adoption-item-into-each-apps-backlog) | ready to start |
 | 9 | [Fold the vault client into house-backend](#9-fold-the-vault-client-into-house-backend) | optional |
 | 10 | [The MCP record-tool layer](#10-the-mcp-record-tool-layer) | idea |
 | 11 | [A check that an app holds no copies](#11-a-check-that-an-app-holds-no-copies) | idea |
-| 12 | [The rule in Ken's user-level CLAUDE.md](#12-the-rule-in-kens-user-level-claudemd) | after 7 |
+| 12 | [The rule in Ken's user-level CLAUDE.md](#12-the-rule-in-kens-user-level-claudemd) | ready to start |
 
 Next number: **13**.
 
 **Status key:** the shared one (`~/develop/backlog/TODO-FORMAT.md`).
 
 ---
-
-## 7. USAGE.md and release v1.0.0
-
-PLAN build order 5 (D-20). Write `USAGE.md` (install and pin, the editable
-workflow of D-6, each module, the options, the invariants, the "new app"
-skeleton taken from `tests/apps/`), cut `README.md` down to a pointer, check
-the repo once more against D-3, and run `./release.sh 1.0.0`.
-
-**Done when:** the wheel downloads from the release URL without credentials
-and installs with the D-4 line in a scratch app's `pyproject.toml`.
 
 ## 8. Write the adoption item into each app's backlog
 

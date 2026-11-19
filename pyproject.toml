@@ -38,6 +38,11 @@ path = "house_backend/__init__.py"
 [tool.hatch.build.targets.wheel]
 packages = ["house_backend"]
 
+[tool.hatch.build]
+# An editable install (pip install -e, PLAN D-6) exposes house_backend only,
+# not the repository root: this repo's tests package must not shadow an app's.
+dev-mode-exact = true
+
 [tool.hatch.build.targets.sdist]
 exclude = ["docs/survey.md"]
 

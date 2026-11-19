@@ -122,3 +122,9 @@ def test_rest_sends_raw_content(client, api_token, house_auth):
         )
     )
     assert out == {"team_id": 1, "bytes": len(b"\x89PNG raw bytes")}
+
+
+def test_rest_refuses_a_human_only_operation_a_tool_names():
+    catalog = Catalog({"t": (("GET", "/api/auth/tokens"),)}, {}, {("GET", "/api/auth/tokens"): "people"})
+    with pytest.raises(RuntimeError, match="not an exposed MCP operation"):
+        asyncio.run(RestCaller(multi.auth, catalog).call(multi.app, None, "GET", "/api/auth/tokens"))

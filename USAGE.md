@@ -331,7 +331,9 @@ async def _api(ctx, method, template, **kwargs):       # in the app's tools.py
 - **catalog**: `Catalog(tool_operations, equivalent, human_only,
   human_only_enforced=None)` with `exposed_operations()` and `tool_names()`.
   `human_only_enforced` defaults to every human-only operation outside
-  `register`, `login` and `logout`. An operation is `(METHOD, path template)`.
+  `register`, `login` and `logout`. A human-only operation is never exposed, even
+  when a tool names it (a generic record tool over a resource with one
+  human-only operation). An operation is `(METHOD, path template)`.
 - **redact**: `Redactor(secret_fields, pattern, placeholder_prefixes)` with
   `redact(value)`, `redact_text(text)` and `contains_marker(value)`;
   `contains_redaction_marker(value)` and `REDACTED` (`"<redacted>"`). Each

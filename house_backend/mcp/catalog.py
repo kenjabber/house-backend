@@ -2,7 +2,8 @@
 
 Every REST operation the app serves is classified as exactly one of:
 
-* **exposed**: an MCP tool calls it (``tool_operations``);
+* **exposed**: an MCP tool calls it (``tool_operations``), unless it is
+  human-only;
 * **equivalent**: not called, because an exposed tool already provides the
   same capability (``equivalent``, operation → tool);
 * **human-only**: deliberately held back from agents (``human_only``,
@@ -42,11 +43,14 @@ class Catalog:
         self.human_only_enforced = frozenset(human_only_enforced)
 
     def exposed_operations(self) -> set[Operation]:
-        """Every REST operation an MCP tool may call."""
+        """Every REST operation an MCP tool may call: those the tools name,
+        less the human-only ones. A generic tool (a record tool reaching every
+        operation of a resource) may name one that is human-only; it stays
+        human-only, and the REST caller refuses it."""
         ops: set[Operation] = set()
         for tool_ops in self.tool_operations.values():
             ops.update(tool_ops)
-        return ops
+        return ops - set(self.human_only)
 
     def tool_names(self) -> list[str]:
         """Every tool the server must register, in presentation order."""
